@@ -2445,7 +2445,7 @@ router.patch('/updatedivicenamebyold',async (req,res)=> {
 
 
 
-router.post("/branchgroup", async (req, res) => {
+router.post("/branchgroup",superadminMiddleware, async (req, res) => {
     try {
         const { username, password, school, branches } = req.body;
 
@@ -2480,7 +2480,7 @@ else{
 });
 
 
-router.get("/branchgroup", async (req, res) => {
+router.get("/branchgroup",superadminMiddleware, async (req, res) => {
   try {
       const branchGroups = await BranchGroup.find() 
                           .populate('school',"schoolName")
@@ -2496,7 +2496,7 @@ router.get("/branchgroup", async (req, res) => {
   }
 });
 
-router.put("/branchgroup/:id", async (req, res) => {
+router.put("/branchgroup/:id",superadminMiddleware, async (req, res) => {
   try {
       const { id } = req.params; 
       const { username, password, school, branches } = req.body;
@@ -2526,7 +2526,7 @@ router.put("/branchgroup/:id", async (req, res) => {
 });
 
 
-router.delete("/branchgroup/:id", async (req, res) => {
+router.delete("/branchgroup/:id",superadminMiddleware, async (req, res) => {
   try {
       const { id } = req.params;
       const deletedBranchGroup = await BranchGroup.findByIdAndDelete(id);
