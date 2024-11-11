@@ -2397,11 +2397,12 @@ router.delete('/delete-branch/:id', superadminMiddleware, async (req, res) => {
 
 
 
+                  // new code start from here
 
 
 
 
-      // new code start from here
+
 
 router.patch('/updatedivicenamebyold',async (req,res)=> {
 
@@ -2455,7 +2456,7 @@ router.patch('/updatedivicenamebyold',async (req,res)=> {
 
 router.post("/branchgroup",superadminMiddleware, async (req, res) => {
     try {
-        const { username, password, school, branches } = req.body;
+        const { username, password, school, branches,phoneNo } = req.body;
 
         if (!username || !password) {
             return res.status(400).json({ message: "Username and Password fields are required" });
@@ -2468,8 +2469,10 @@ router.post("/branchgroup",superadminMiddleware, async (req, res) => {
             username,
             password,
             school,
-            branches
+            branches,
+            phoneNo
         });
+        
         await branchGroup.save();
 
         res.status(201).json({
@@ -2508,6 +2511,7 @@ else{
 
 
 router.get("/branchgroup", superadminMiddleware, async (req, res) => {
+
   try {
     const branchGroups = await BranchGroup.find()
       .populate('school', 'schoolName') 
@@ -2549,20 +2553,24 @@ router.get("/branchgroup", superadminMiddleware, async (req, res) => {
 
 
 
-
-
 router.put("/branchgroup/:id",superadminMiddleware, async (req, res) => {
   try {
       const { id } = req.params; 
-      const { username, password, school, branches } = req.body;
+      const { username, password,phoneNo, school, branches} = req.body;
+
 
       if (!id) {
-          return res.status(400).json({ message: "All fields are required" });
+          return res.status(400).json({ message: "Id is required" });
       }
 
+      
+      const existusername = await BranchGroup.findOne({username})
+      
+      if (existusername._id ==id) {
+      
       const updatedBranchGroup = await BranchGroup.findByIdAndUpdate(
           id,
-          { username, password, school, branches },
+          { username, password,phoneNo, school, branches },
           { new: true, runValidators: true } 
       );
 
@@ -2574,6 +2582,10 @@ router.put("/branchgroup/:id",superadminMiddleware, async (req, res) => {
           message: "Branch group updated successfully",
           branchGroup: updatedBranchGroup
       });
+    }else{
+      return res.status(409).json({ message: "choose another username it is exist" });
+
+    }
   } catch (error) {
       console.error("Error updating branch group:", error);
       res.status(500).json({ message: "Server error" });
@@ -2625,11 +2637,13 @@ router.post('/login/schooluser',async (req, res) => {
   const { username, password } = req.body;
   try {
     const schooluser = await BranchGroup.findOne({ username })
-    .populate("school") .populate({
+    .populate("school","schoolName" )
+    .populate({
       path: "branches",
+      select: "branchName",
       populate: {
         path: "devices", 
-        name: "name" 
+        select: "deviceName",
       }
     });
 

@@ -11,6 +11,9 @@ const branchgroupSchema = new mongoose.Schema({
               type: String,
               required: true, 
   },
+  phoneNo: { 
+              type: String,
+  },
   school: { type: mongoose.Schema.Types.ObjectId, ref: 'School', default: null },
   branches: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Branch', default: null }],
   
