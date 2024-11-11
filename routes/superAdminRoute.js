@@ -17,6 +17,10 @@ const Geofencing = require("../models/geofence");
 const Device = require('../models/device');
 const { sendNotificationToParent } = require('../utils/notificationsUtils'); 
 
+const axios = require('axios');
+const BranchGroup = require('../models/branchgroup.model');
+
+
 
 const convertDate = (dateStr) => {
   const dateParts = dateStr.split('-');
@@ -1618,6 +1622,7 @@ router.post('/registerStatus-supervisor/:supervisorId', superadminMiddleware, as
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 router.post('/add-device', superadminMiddleware, async (req, res) => {
   try {
     const { deviceId, deviceName, schoolName, branchName } = req.body;
@@ -2386,6 +2391,209 @@ router.delete('/delete-branch/:id', superadminMiddleware, async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+
+      // new code start from here
+
+router.patch('/updatedivicenamebyold',async (req,res)=> {
+
+      const username = "schoolmaster";
+      const password = 123456;
+      const url = 'https://rocketsalestracker.com/api/devices';
+
+  try {
+    const response = await axios.get( url,{auth:{username,password}});
+    const devicesFromApi = response.data;
+
+    // console.log("pavan this is data check",devicesFromApi);
+    
+
+    for (let device of devicesFromApi) {
+      const { id, name } = device;
+      
+      
+      await Device.updateOne(
+        { deviceId: id, deviceName:{$ne:name} },  
+        { $set: { deviceName: name } }  
+      );
+      await DriverCollection.updateOne(
+        { deviceId: id, deviceName:{$ne:name} },  
+        { $set: { deviceName: name } } 
+      );
+      await Supervisor.updateOne(
+        { deviceId: id, deviceName:{$ne:name} },  
+        { $set: { deviceName: name } } 
+      );
+      await Child.updateMany( 
+        { deviceId: id, deviceName:{$ne:name} },  
+        { $set: { deviceName: name } } 
+      );
+      console.log("pavan check");
+      
+    }
+    console.log('Device names updated successfully!');
+   return res.status(200).json({
+      message: 'updated DeviceName everywhere successfully',
+    });
+    } catch (error) {
+    console.error('Error updating device names:', error);
+  }
+}
+
+)
+
+
+
+
+router.post("/branchgroup", async (req, res) => {
+    try {
+        const { username, password, school, branches } = req.body;
+
+        if (!username || !password) {
+            return res.status(400).json({ message: "Username and Password fields are required" });
+        }
+
+      const existGroupbranches = await BranchGroup.findOne({username})
+
+        if(!existGroupbranches){
+        const branchGroup = new BranchGroup({
+            username,
+            password,
+            school,
+            branches
+        });
+        await branchGroup.save();
+
+        res.status(201).json({
+            message: "Branch group created successfully",
+            branchGroup
+        });
+}
+else{
+  return res.status(400).json({ message: "Username already exist" });
+
+}
+    } catch (error) {
+        console.error("Error creating branch group:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+});
+
+
+router.get("/branchgroup", async (req, res) => {
+  try {
+      const branchGroups = await BranchGroup.find() 
+                          .populate('school',"schoolName")
+                          .populate('branches',"branchName");
+
+      res.status(200).json({
+          message: "Branch groups retrieved successfully",
+          branchGroups
+      });
+  } catch (error) {
+      console.error("Error retrieving branch groups:", error);
+      res.status(500).json({ message: "Server error" });
+  }
+});
+
+router.put("/branchgroup/:id", async (req, res) => {
+  try {
+      const { id } = req.params; 
+      const { username, password, school, branches } = req.body;
+
+      if (!id) {
+          return res.status(400).json({ message: "All fields are required" });
+      }
+
+      const updatedBranchGroup = await BranchGroup.findByIdAndUpdate(
+          id,
+          { username, password, school, branches },
+          { new: true, runValidators: true } 
+      );
+
+      if (!updatedBranchGroup) {
+          return res.status(404).json({ message: "Branch group not found" });
+      }
+
+      res.status(200).json({
+          message: "Branch group updated successfully",
+          branchGroup: updatedBranchGroup
+      });
+  } catch (error) {
+      console.error("Error updating branch group:", error);
+      res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+router.delete("/branchgroup/:id", async (req, res) => {
+  try {
+      const { id } = req.params;
+      const deletedBranchGroup = await BranchGroup.findByIdAndDelete(id);
+      if (!deletedBranchGroup) {
+          return res.status(404).json({ message: "Branch group not found" });
+      }
+      res.status(200).json({ message: "Branch group deleted successfully" });
+  } catch (error) {
+      console.error("Error deleting branch group:", error);
+      res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+
+
+router.get("/branchgroupbyschool", async (req, res) => {
+  try {
+      const schoolId = req.query.schoolId;
+
+      // if (!Types.ObjectId.isValid(schoolId)) {
+      //     return res.status(400).json({ message: "Invalid school ID" });
+      // }
+
+      const branchGroups = await BranchGroup.find({ school: schoolId })
+                                .populate('school',"schoolName")
+                                .populate('branches',"branchName");
+
+      res.status(200).json({
+          message: "Branch groups retrieved successfully",
+          branchGroups
+      });
+  } catch (error) {
+      console.error("Error retrieving branch groups:", error);
+      res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+router.post('/login/schooluser',async (req, res) => {
+  const { username, password } = req.body;
+  try {
+    const schooluser = await BranchGroup.findOne({ username })
+    .populate("school") .populate({
+      path: "branches",
+      populate: {
+        path: "devices", 
+        name: "name" 
+      }
+    });
+
+    if (!schooluser) {
+      return res.status(400).json({ error: "Invalid username or password" });
+    }
+    const isMatch = await schooluser.comparePassword(password);
+    if (!isMatch) {
+      return res.status(400).json({ error: "Invalid username or password" });
+    }
+    const token = generateToken({ id: schooluser._id, username: schooluser.username });
+    res.status(200).json({ success: true, message: "Login successful", token ,role: 'schoolUser',data:schooluser});
+  } catch (err) {
+    console.error("Error during login:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+
 
 
 module.exports = router;
