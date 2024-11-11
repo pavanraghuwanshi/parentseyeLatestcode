@@ -2456,7 +2456,7 @@ router.patch('/updatedivicenamebyold',async (req,res)=> {
 
 router.post("/branchgroup",superadminMiddleware, async (req, res) => {
     try {
-        const { username, password, school, branches,phoneNo } = req.body;
+        const { username, password, schoolName, branchName,phoneNo } = req.body;
 
         if (!username || !password) {
             return res.status(400).json({ message: "Username and Password fields are required" });
@@ -2468,8 +2468,8 @@ router.post("/branchgroup",superadminMiddleware, async (req, res) => {
         const branchGroup = new BranchGroup({
             username,
             password,
-            school,
-            branches,
+            school:schoolName,
+            branches:branchName,
             phoneNo
         });
         
