@@ -19,6 +19,7 @@ const { sendNotificationToParent } = require('../utils/notificationsUtils');
 
 const axios = require('axios');
 const BranchGroup = require('../models/branchgroup.model');
+const moment = require('moment'); 
 
 
 
@@ -2393,6 +2394,13 @@ router.delete('/delete-branch/:id', superadminMiddleware, async (req, res) => {
 });
 
 
+
+
+
+
+
+
+
       // new code start from here
 
 router.patch('/updatedivicenamebyold',async (req,res)=> {
@@ -2480,21 +2488,68 @@ else{
 });
 
 
-router.get("/branchgroup",superadminMiddleware, async (req, res) => {
-  try {
-      const branchGroups = await BranchGroup.find() 
-                          .populate('school',"schoolName")
-                          .populate('branches',"branchName");
+// router.get("/branchgroup",superadminMiddleware, async (req, res) => {
+//   try {
+//       const branchGroups = await BranchGroup.find() 
+//                           .populate('school',"schoolName")
+//                           .populate('branches',"branchName");
 
-      res.status(200).json({
-          message: "Branch groups retrieved successfully",
-          branchGroups
-      });
+//       res.status(200).json({
+//           message: "Branch groups retrieved successfully",
+//           branchGroups
+//       });
+//   } catch (error) {
+//       console.error("Error retrieving branch groups:", error);
+//       res.status(500).json({ message: "Server error" });
+//   }
+// });
+
+
+
+
+router.get("/branchgroup", superadminMiddleware, async (req, res) => {
+  try {
+    const branchGroups = await BranchGroup.find()
+      .populate('school', 'schoolName') 
+      .populate('branches', 'branchName')
+
+    const transformedBranchGroups = branchGroups.map(branchGroup => {
+      let decryptedPassword = 'No password';
+      
+      try {
+        if (branchGroup.password) {
+          decryptedPassword = decrypt(branchGroup.password); 
+        }
+      } catch (decryptError) {
+        console.error(`Error decrypting password for BranchGroup ${branchGroup._id}:`, decryptError);
+        decryptedPassword = 'Error decrypting password';
+      }
+
+      const formattedCreatedAt = moment(branchGroup.createdAt).format('DD-MM-YYYY');
+      const formattedupdatedAt = moment(branchGroup.updatedAt).format('DD-MM-YYYY');
+
+      return {
+        ...branchGroup.toObject(), 
+        password: decryptedPassword, 
+        createdAt: formattedCreatedAt, 
+        updatedAt:formattedupdatedAt
+      };
+    });
+
+    res.status(200).json({
+      message: "Branch groups retrieved successfully",
+      branchGroups: transformedBranchGroups,
+    });
+
   } catch (error) {
-      console.error("Error retrieving branch groups:", error);
-      res.status(500).json({ message: "Server error" });
+    console.error("Error retrieving branch groups:", error);
+    res.status(500).json({ message: "Server error" });
   }
 });
+
+
+
+
 
 router.put("/branchgroup/:id",superadminMiddleware, async (req, res) => {
   try {
