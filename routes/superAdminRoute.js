@@ -2556,7 +2556,7 @@ router.get("/branchgroup", superadminMiddleware, async (req, res) => {
 router.put("/branchgroup/:id",superadminMiddleware, async (req, res) => {
   try {
       const { id } = req.params; 
-      const { username, password,phoneNo, school, branches} = req.body;
+      const { username, password,phoneNo, schoolName, branches} = req.body;
 
       if (!id) {
           return res.status(400).json({ message: "Id is required" });
@@ -2564,7 +2564,7 @@ router.put("/branchgroup/:id",superadminMiddleware, async (req, res) => {
       
       const updatedBranchGroup = await BranchGroup.findByIdAndUpdate(
           id,
-          { username, password,phoneNo, school, branches },
+          { username, password,phoneNo, school:schoolName, branches },
           { new: true, runValidators: true } 
       );
 
