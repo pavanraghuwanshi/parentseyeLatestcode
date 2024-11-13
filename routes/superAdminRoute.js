@@ -2558,15 +2558,9 @@ router.put("/branchgroup/:id",superadminMiddleware, async (req, res) => {
       const { id } = req.params; 
       const { username, password,phoneNo, school, branches} = req.body;
 
-
       if (!id) {
           return res.status(400).json({ message: "Id is required" });
-      }
-
-      
-      const existusername = await BranchGroup.findOne({username})
-      
-      if (existusername._id ==id) {
+      }      
       
       const updatedBranchGroup = await BranchGroup.findByIdAndUpdate(
           id,
@@ -2582,10 +2576,7 @@ router.put("/branchgroup/:id",superadminMiddleware, async (req, res) => {
           message: "Branch group updated successfully",
           branchGroup: updatedBranchGroup
       });
-    }else{
-      return res.status(409).json({ message: "choose another username it is exist" });
-
-    }
+    
   } catch (error) {
       console.error("Error updating branch group:", error);
       res.status(500).json({ message: "Server error" });
