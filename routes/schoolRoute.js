@@ -14,6 +14,8 @@ const jwt = require("jsonwebtoken");
 const Branch = require('../models/branch');
 const Geofencing = require("../models/geofence");
 const Device = require('../models/device');
+const BranchGroup = require('../models/branchgroup.model');
+
 const convertDate = (dateStr) => {
   const dateParts = dateStr.split('-');
   const jsDate = new Date(`${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`);
@@ -23,43 +25,128 @@ const convertDate = (dateStr) => {
   };
 }
 
+// router.post('/login', async (req, res) => {
+//   const { username, password } = req.body;
+
+//   try {
+//     // Find the school by username
+//     const school = await School.findOne({ username });
+//     if (!school) {
+//       return res.status(400).json({ error: 'Invalid username or password' });
+//     }
+
+//     // Compare the provided password with the stored hashed password
+//     const isMatch = await school.comparePassword(password);
+//     if (!isMatch) {
+//       return res.status(400).json({ error: 'Invalid username or password' });
+//     }
+
+//     // Generate the token using the existing function
+//     const token = generateToken({
+//       id: school._id,
+//       username: school.username,
+//       role: 'school',
+//       schoolName : school.schoolName,
+//       branchName : school.mainBranch,
+//       branches: school.branches
+//     });
+
+//     res.status(200).json({
+//       success: true,
+//       message: 'Login successful',
+//       token,
+//       role: 'schooladmin'
+//     });
+//   } catch (error) {
+//     console.error('Error during login:', error);
+//     res.status(500).json({ error: 'Server error' });
+//   }
+// });
+
+
+
 router.post('/login', async (req, res) => {
   const { username, password } = req.body;
 
   try {
     // Find the school by username
     const school = await School.findOne({ username });
-    if (!school) {
-      return res.status(400).json({ error: 'Invalid username or password' });
+    const user = await BranchGroup.findOne({ username })
+    // .populate("school","schoolName" )
+    // .populate({
+    //   path: "branches",
+    //   select: "branchName",
+    //   populate: {
+    //     path: "devices", 
+    //     select: "deviceName",
+    //   }
+    // });
+
+    if (!school && !user) {
+      return res.status(400).json({ error: 'Invalid username or password pavan' });
     }
 
     // Compare the provided password with the stored hashed password
-    const isMatch = await school.comparePassword(password);
-    if (!isMatch) {
-      return res.status(400).json({ error: 'Invalid username or password' });
-    }
+    if(school){
+
+      const isMatch = await school.comparePassword(password);
+      if (!isMatch) {
+        return res.status(400).json({ error: 'Invalid username or password' });
+      }
+
+      const token = generateToken({
+        id: school._id,
+        username: school.username,
+        role: 'school',
+        schoolName : school.schoolName,
+        branchName : school.mainBranch,
+        branches: school.branches
+      });
+  
+  
+      res.status(200).json({
+        success: true,
+        message: 'Login successful',
+        token,
+        // school,
+        role: 'schooladmin'
+      });
+
+
+    }else{
+
+      const isMatchuser = await user.comparePassword(password);
+      if (!isMatchuser) {
+        return res.status(400).json({ error: 'Invalid username or password' });
+      }
+
+      const token = generateToken({
+        id: user._id,
+        username: user.username,
+        role: 'User',
+        schoolName : user.school,
+        branches: user.branches
+      });
+      res.status(200).json({
+        success: true,
+        message: 'Login successful',
+        token,
+        // user,
+        role: 'schooluser'
+      });
+
+    }          
 
     // Generate the token using the existing function
-    const token = generateToken({
-      id: school._id,
-      username: school.username,
-      role: 'school',
-      schoolName : school.schoolName,
-      branchName : school.mainBranch,
-      branches: school.branches
-    });
+  
+   
 
-    res.status(200).json({
-      success: true,
-      message: 'Login successful',
-      token,
-      role: 'schooladmin'
-    });
   } catch (error) {
     console.error('Error during login:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
+
 router.post('/add-branch', schoolAuthMiddleware, async (req, res) => {
   try {
     const { schoolId, branchName, email, schoolMobile, username, password } = req.body;
