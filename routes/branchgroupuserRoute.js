@@ -3,7 +3,7 @@ const router = express.Router();
 
 
 const { authenticateBranchGroupUser } = require('../middleware/authmiddleware');
-const { getChildByBranchGroup,registerParentByBranchgroup,approveParentByBranchgroup,presentchildrenByBranchgroup,updatechildByBranchgroup,deleteChildByBranchgroup, Pendingrequests, Approverequests, Deniedrequests,getDriverData, updateDriver, deletedriver, AddDevices, readSuperviserByBranchGroupUser, updateSupervisorByBranchGroupUser,deleteSupervisorByBranchGroupUser, getGeofence, deleteGeofence, getDevices, updateDevice, updateGeofence, ApproveSupervisor, ApproveDriver, getParentByBranchgroup, updateParentByBranchgroup, deleteParentByBranchgroup, absentchildrenByBranchgroup } = require('../controllers/branchgroupuserController');
+const { getChildByBranchGroup,registerParentByBranchgroup,approveParentByBranchgroup,presentchildrenByBranchgroup,updatechildByBranchgroup,deleteChildByBranchgroup, Pendingrequests, Approverequests, Deniedrequests,getDriverData, updateDriver, deletedriver, AddDevices, readSuperviserByBranchGroupUser, updateSupervisorByBranchGroupUser,deleteSupervisorByBranchGroupUser, getGeofence, deleteGeofence, getDevices, updateDevice, updateGeofence, ApproveSupervisor, ApproveDriver, getParentByBranchgroup, updateParentByBranchgroup, deleteParentByBranchgroup, absentchildrenByBranchgroup, deletedeviceByBranchgroup } = require('../controllers/branchgroupuserController');
 
 
 
@@ -20,6 +20,7 @@ router.post("/approveParentByBranchgroup/:id",authenticateBranchGroupUser,approv
 router.post("/adddevicesbybranchgroupuser",authenticateBranchGroupUser,AddDevices)
 router.get("/getdevicebranchgroupuser",authenticateBranchGroupUser,getDevices)
 router.put("/updateDevicebranchgroupuser/:id",authenticateBranchGroupUser,updateDevice)
+router.delete("/deletedevicebybranchgroup/:id",authenticateBranchGroupUser,deletedeviceByBranchgroup)
 
 
 

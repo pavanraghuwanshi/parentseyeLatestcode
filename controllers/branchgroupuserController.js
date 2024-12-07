@@ -528,8 +528,6 @@ exports.Approverequests = async (req, res) => {
 
       const branchName = branch.branchName;
 
-      console.log(branchId)
-
       const requests = await Request.find({
         statusOfRequest: "approved",
         branchId: branchId,
@@ -539,8 +537,8 @@ exports.Approverequests = async (req, res) => {
           select: "childName class deviceId deviceName",
         })
         .populate("parentId", "parentName email phone")
+        .populate("schoolId", "schoolName")
         .lean();
-        console.log(requests,"kkkkk")
 
       // const validRequests = requests.filter(
       //   (request) => request.parentId && request.childId
@@ -620,6 +618,7 @@ exports.Deniedrequests = async (req, res) => {
           select: "childName class deviceId deviceName",
         })
         .populate("parentId", "parentName email phone")
+        .populate("schoolId", "schoolName")
         .lean();
 
       // const validRequests = requests.filter(
@@ -937,7 +936,23 @@ exports.updateDevice = async (req, res) => {
   }
 };
 
-    
+exports.deletedeviceByBranchgroup =  async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const device = await Device.findById(id);
+    if (!device) {
+      return res.status(404).json({ message: 'Device not found' });
+    }
+
+    await Device.deleteOne({ _id: id });
+
+    res.status(200).json({ message: 'Device deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting device:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
 
 
               // geofence Apis for user
