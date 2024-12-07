@@ -16,6 +16,15 @@ const { decrypt } = require("../models/cryptoUtils");
 const { formatDateToDDMMYYYY } = require("../utils/dateUtils");
 
 
+const convertDate = (dateStr) => {
+  const dateParts = dateStr.split('-');
+  const jsDate = new Date(`${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`);
+  return {
+    date: dateStr,
+    originalDate: jsDate
+  };
+}
+
 
 
               //  Parent All Api For Branch Group User
@@ -430,6 +439,196 @@ exports.deleteChildByBranchgroup =  async (req, res) => {
   } catch (error) {
     console.error('Error deleting child:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+                //  children status and In expand get all detail of student Api
+                
+// exports.getChildrenStatus =  async (req, res) => {
+
+//   try {
+
+//     const branchIds = req.user.branches          
+
+//     const children = await Child.find({ branchId:{ $in: branchIds } })
+//       .populate({
+//         path: 'parentId',
+//         select: 'parentName phone email password'
+//       })
+//       .populate({
+//         path: 'branchId',
+//         select: 'branchName'
+//       })
+//       .populate({
+//         path: 'schoolId',
+//         select: 'schoolName'
+//       })
+//       .lean();
+
+//     if (children.length === 0) {
+//       return res.status(404).json({ message: 'No children found for this school' });
+//     }
+
+//     const branchesMap = {};
+
+//     for (const child of children) {
+//       const parent = child.parentId;
+
+//       const attendance = await Attendance.findOne({ childId: child._id })
+//         .sort({ date: -1 })
+//         .lean();
+
+//       const request = await Request.findOne({ childId: child._id })
+//         .sort({ requestDate: -1 })
+//         .lean();
+
+//       let supervisor = null;
+//       if (child.deviceId) {
+//         supervisor = await Supervisor.findOne({ deviceId: child.deviceId, schoolId }).lean();
+//       }
+//       const password = parent ? decrypt(parent.password) : 'Unknown Password';
+
+//       if (attendance || request) {
+
+//         const childData = {
+//           childId: child._id,
+//           childName: child.childName,
+//           childClass: child.class,
+//           childAge:child.childAge,
+//           section:child.section,
+//           childAge: child.childAge,
+//           rollno: child.rollno,
+//           deviceId: child.deviceId,
+//           deviceName:child.deviceName,
+//           gender: child.gender,
+//           pickupPoint: child.pickupPoint,
+//             parentName: parent ? parent.parentName : 'Parent not found',
+//             parentNumber: parent ? parent.phone : 'Parent not found',
+//             email:parent ? parent.email :"unknown email",
+//             password: password,
+//           ...(attendance && {
+//             pickupStatus: attendance.pickup ? 'Present' : 'Absent',
+//             dropStatus: attendance.drop ? 'Present' : 'Absent',
+//             pickupTime: attendance.pickupTime,
+//             dropTime: attendance.dropTime,
+//             date: attendance.date
+//           }),
+//           ...(request && {
+//               requestType: request.requestType,
+//               startDate: formatDateToDDMMYYYY(request.startDate)|| 'N/A',
+//               endDate: formatDateToDDMMYYYY(request.endDate) || 'N/A',
+//               reason: request.reason || 'N/A',
+//               newRoute: request.newRoute || 'N/A',
+//               statusOfRequest: request.statusOfRequest || 'N/A',
+//               requestDate: formatDateToDDMMYYYY(request.requestDate) || 'N/A'            
+//           }),
+//           ...(supervisor && {
+//             supervisorName: supervisor.supervisorName
+//           })
+//         };
+
+//         if (!branchesMap[child.branchId._id]) {
+//           branchesMap[child.branchId._id] = {
+//             branchId: child.branchId._id,
+//             branchName: child.branchId.branchName,
+//             children: []
+//           };
+//         }
+
+//         branchesMap[child.branchId._id].children.push(childData);
+//       }
+//     }
+
+//     const branches = Object.values(branchesMap);
+
+//     const response = {
+//       schoolId: schoolId,
+//       schoolName: children[0].schoolId ? children[0].schoolId.schoolName : 'N/A',
+//       branches
+//     };
+
+//     res.json(response);
+//   } catch (error) {
+//     console.error('Error fetching all children status:', error);
+//     res.status(500).json({ message: 'Server error' });
+//   }
+// };
+
+
+
+
+
+
+
+              //    Pickup And Drop status by Branch group user
+
+              
+exports.pickupdropstatusByBranchgroup =  async (req, res) => {
+  try {
+    const branchIds = req.user.branches          
+    const schoolName = req.user.school          
+
+    const attendanceRecords = await Attendance.find({})
+      .populate({
+        path: "childId",
+        match: { branchId: { $in: branchIds } },
+        populate: [
+          { path: "parentId", select: "phone" }, 
+          { path: "branchId", select: "branchName" }, 
+          { path: "schoolId", select: "schoolName" } 
+        ]
+      })
+      .lean();
+
+    const branchesMap = {};
+
+    attendanceRecords
+      .filter(record => record.childId && record.childId.parentId)
+      .forEach(record => {
+        const { date, originalDate } = convertDate(record.date);
+        const childData = {
+          _id: record.childId._id,
+          childName: record.childId.childName,
+          class: record.childId.class,
+          rollno: record.childId.rollno,
+          section: record.childId.section,
+          parentId: record.childId.parentId._id,
+          phone: record.childId.parentId.phone,
+          branchName: record.childId.branchId ? record.childId.branchId.branchName : "Branch not found",
+          schoolName: record.childId.schoolId ? record.childId.schoolId.schoolName : "School not found",
+          pickupStatus: record.pickup,
+          pickupTime: record.pickupTime,
+          deviceId: record.childId.deviceId,
+          pickupPoint: record.childId.pickupPoint,
+          dropStatus: record.drop,
+          dropTime: record.dropTime,
+          deviceName: record.childId.deviceName,
+          deviceId: record.childId.deviceId,
+          date:record.date
+        };
+
+        if (!branchesMap[record.childId.branchId._id]) {
+          branchesMap[record.childId.branchId._id] = {
+            branchId: record.childId.branchId._id,
+            branchName: record.childId.branchId.branchName,
+            children: []
+          };
+        }
+
+        branchesMap[record.childId.branchId._id].children.push(childData);
+      });
+
+    const branches = Object.values(branchesMap);
+
+    const responseData = {
+      schoolName,
+      branches
+    };
+
+    res.status(200).json(responseData);
+  } catch (error) {
+    console.error("Error fetching attendance data:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -1133,7 +1332,6 @@ exports.absentchildrenByBranchgroup = async (req, res) => {
         ]
       })
       .lean();
-      console.log(attendanceRecords,"[[[[[[[[[[[[[[[[")
 
     const branchMap = {};
 

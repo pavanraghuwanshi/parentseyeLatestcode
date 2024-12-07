@@ -14,6 +14,7 @@ const jwt = require("jsonwebtoken");
 const Branch = require('../models/branch');
 const Geofencing = require("../models/geofence");
 const Device = require('../models/device');
+
 const convertDate = (dateStr) => {
   const dateParts = dateStr.split('-');
   const jsDate = new Date(`${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`);

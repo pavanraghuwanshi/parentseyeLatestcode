@@ -3,7 +3,7 @@ const router = express.Router();
 
 
 const { authenticateBranchGroupUser } = require('../middleware/authmiddleware');
-const { getChildByBranchGroup,registerParentByBranchgroup,approveParentByBranchgroup,presentchildrenByBranchgroup,updatechildByBranchgroup,deleteChildByBranchgroup, Pendingrequests, Approverequests, Deniedrequests,getDriverData, updateDriver, deletedriver, AddDevices, readSuperviserByBranchGroupUser, updateSupervisorByBranchGroupUser,deleteSupervisorByBranchGroupUser, getGeofence, deleteGeofence, getDevices, updateDevice, updateGeofence, ApproveSupervisor, ApproveDriver, getParentByBranchgroup, updateParentByBranchgroup, deleteParentByBranchgroup, absentchildrenByBranchgroup, deletedeviceByBranchgroup } = require('../controllers/branchgroupuserController');
+const { getChildByBranchGroup,registerParentByBranchgroup,approveParentByBranchgroup,presentchildrenByBranchgroup,updatechildByBranchgroup,deleteChildByBranchgroup, Pendingrequests, Approverequests, Deniedrequests,getDriverData, updateDriver, deletedriver, AddDevices, readSuperviserByBranchGroupUser, updateSupervisorByBranchGroupUser,deleteSupervisorByBranchGroupUser, getGeofence, deleteGeofence, getDevices, updateDevice, updateGeofence, ApproveSupervisor, ApproveDriver, getParentByBranchgroup, updateParentByBranchgroup, deleteParentByBranchgroup, absentchildrenByBranchgroup, deletedeviceByBranchgroup, pickupdropstatusByBranchgroup, getChildrenStatus } = require('../controllers/branchgroupuserController');
 
 
 
@@ -52,10 +52,13 @@ router.get("/pendingrequests",authenticateBranchGroupUser,Pendingrequests);
 router.get("/approverequests",authenticateBranchGroupUser,Approverequests);
 router.get("/deniedrequests",authenticateBranchGroupUser,Deniedrequests);
 
+                    //  pickup- drop get Api  
+router.get("/pickupdropstatusbybranchgroupuser",authenticateBranchGroupUser,pickupdropstatusByBranchgroup);
 
 
+                    //  children status Api 
 
-
+// router.get("/getchildrenstatus",authenticateBranchGroupUser,getChildrenStatus);
 
 
 

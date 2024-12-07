@@ -405,17 +405,14 @@ exports.ab = (io, socket) => {
      let alertInterval
 
      socket.on("disconnect", (reason) => {
-          console.log(`User ${socket.id} disconnected. Reason: ${reason}`);
+          // console.log(`User ${socket.id} disconnected. Reason: ${reason}`);
           clearInterval(alertInterval);
      });
 
      socket.on("authenticate", (data) => {
           const token = data.token;
           let loginUsersId;
-          let role;
-  
-               console.log("token", token);
-               
+          let role;               
 
           if (!token) {
               console.log("Authentication error: No token provided");
