@@ -453,9 +453,10 @@ exports.Pendingrequests = async (req, res) => {
       })
         .populate({
           path: "childId",
-          select: "childName class deviceId",
+          select: "childName class deviceId deviceName",
         })
         .populate("parentId", "parentName email phone")
+        .populate("schoolId", "schoolName")
         .lean();
 
       // const validRequests = requests.filter(
@@ -527,16 +528,19 @@ exports.Approverequests = async (req, res) => {
 
       const branchName = branch.branchName;
 
+      console.log(branchId)
+
       const requests = await Request.find({
-        statusOfRequest: "Approve",
+        statusOfRequest: "approved",
         branchId: branchId,
       })
         .populate({
           path: "childId",
-          select: "childName class deviceId",
+          select: "childName class deviceId deviceName",
         })
         .populate("parentId", "parentName email phone")
         .lean();
+        console.log(requests,"kkkkk")
 
       // const validRequests = requests.filter(
       //   (request) => request.parentId && request.childId
@@ -608,12 +612,12 @@ exports.Deniedrequests = async (req, res) => {
       const branchName = branch.branchName;
 
       const requests = await Request.find({
-        statusOfRequest: "Denied",
+        statusOfRequest: "denied",
         branchId: branchId,
       })
         .populate({
           path: "childId",
-          select: "childName class deviceId",
+          select: "childName class deviceId deviceName",
         })
         .populate("parentId", "parentName email phone")
         .lean();
@@ -1028,6 +1032,7 @@ exports.updateGeofence =  async (req, res) => {
 
 
 
+                  // Get Present And Absent Child By branch Group user 
 
 exports.presentchildrenByBranchgroup = async (req, res) => {
   try {
@@ -1092,6 +1097,78 @@ exports.presentchildrenByBranchgroup = async (req, res) => {
     res.status(200).json({ branches: dataByBranch });
   } catch (error) {
     console.error("Error fetching present pickup data:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+exports.absentchildrenByBranchgroup = async (req, res) => {
+
+  try {
+    const branchIds = req.user.branches; 
+    const schoolName = req.user.school; 
+
+    const attendanceRecords = await Attendance.find({ pickup: false })
+      .populate({
+        path: "childId",
+        match: { branchId: { $in: branchIds } },
+        populate: [
+          { path: "parentId", select: "phone" },
+          { path: "branchId", select: "branchName" },
+          { path: "schoolId", select: "schoolName" }
+        ]
+      })
+      .lean();
+      console.log(attendanceRecords,"[[[[[[[[[[[[[[[[")
+
+    const branchMap = {};
+
+    attendanceRecords.forEach(record => {
+
+      if (record.childId && record.childId.branchId) {
+        const branchId = record.childId.branchId._id || 'unknown';
+
+        if (!branchMap[branchId]) {
+          branchMap[branchId] = {
+            branchId: branchId,
+            branchName: record.childId.branchId.branchName || "Branch not found",
+            children: []
+          };
+        }
+
+        const childData = {
+          _id: record.childId._id,
+          childName: record.childId.childName,
+          class: record.childId.class,
+          rollno: record.childId.rollno,
+          section: record.childId.section,
+          parentId: record.childId.parentId ? record.childId.parentId._id : null,
+          phone: record.childId.parentId ? record.childId.parentId.phone : null,
+          branchName: record.childId.branchId.branchName || "Branch not found",
+          schoolName: record.childId.schoolId ? record.childId.schoolId.schoolName : "School not found",
+          pickupStatus: record.pickup,
+          pickupTime: record.pickupTime,
+          deviceId: record.childId.deviceId,
+          deviceName: record.childId.deviceName,
+          pickupPoint: record.childId.pickupPoint,
+          date: record.date
+        };
+
+        branchMap[branchId].children.push(childData);
+      }
+    });
+
+    const branches = Object.values(branchMap);
+    // const school = await School.findById(schoolId).lean();
+
+    const responseData = {
+      // schoolId: schoolId,
+      schoolName: schoolName,
+      branches: branches
+    };
+
+    res.status(200).json(responseData);
+  } catch (error) {
+    console.error("Error fetching absent children data:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
