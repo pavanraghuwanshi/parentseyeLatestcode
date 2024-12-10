@@ -1163,18 +1163,16 @@ exports.getGeofence = async (req, res) => {
     const devices = await Device.find({ branchId: { $in: branches } })
       .select('deviceId branchId deviceName password')
       .populate('branchId', 'branchName');
-
-      console.log(devices,"pava");
       
       
-      const deviceIds = devices.map((device) => {device.deviceId, device.deviceName});
-      console.log(deviceIds,"pava");
+      const deviceIds = devices.map((device) => device.deviceId);
 
     const geofences = await Geofencing.find({ deviceId: { $in: deviceIds } });    
 
     const groupedGeofences = devices.reduce((acc, device) => {
       const branchId = device.branchId._id;
       const branchName = device.branchId.branchName;
+      const deviceName = device.deviceName;
 
       if (!acc[branchId]) {
         acc[branchId] = {
@@ -1184,9 +1182,9 @@ exports.getGeofence = async (req, res) => {
         };
       }
 
-      const branchGeofences = geofences.filter(
-        (geo) => geo.deviceId.toString() === device.deviceId.toString()
-      );
+      const branchGeofences = geofences
+      .filter((geo) => geo.deviceId.toString() === device.deviceId.toString())
+      .map((geo) => ({ ...geo._doc, deviceName }));
 
       acc[branchId].geofences.push(...branchGeofences);
 
