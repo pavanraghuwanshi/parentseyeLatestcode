@@ -219,7 +219,7 @@ exports.getParentByBranchgroup =  async (req, res) => {
 exports.updateParentByBranchgroup =  async (req, res) => {
  
   const id = req.params.id;
-  const { parentName, email, password, phone } = req.body;
+  const { parentName, email, password, phone,branchId } = req.body;
 
   try {
     const parent = await Parent.findOne({ _id: id });
@@ -232,6 +232,7 @@ exports.updateParentByBranchgroup =  async (req, res) => {
     if (email) parent.email = email;
     if (phone) parent.phone = phone;
     if (password) parent.password = password; 
+    if (branchId) parent.branchId = branchId; 
 
     await parent.save();
     
@@ -988,14 +989,14 @@ exports.getDriverData = async (req, res) => {
 
 exports.updateDriver = async (req, res) => {
   try {
-    const { driverName, address, driverMobile, email } = req.body;
+    const { driverName, address, driverMobile, email, deviceName, branchId } = req.body;
    
     const id = req.params
     
 
     const driver = await DriverCollection.findOneAndUpdate(
       { _id: new mongoose.Types.ObjectId(id) },
-      { driverName, address, driverMobile, email },
+      { driverName, address, driverMobile, email, deviceName, branchId },
       { new: true }
     );
 
@@ -1533,13 +1534,13 @@ exports.ApproveSupervisor =  async (req, res) => {
 
 exports.updateSupervisorByBranchGroupUser = async (req, res) => {
   try {
-    const { supervisorName, address, phone, email } = req.body;
+    const { supervisorName, address, phone, email,deviceName, branchId } = req.body;
     const supervisorId = req.params.id;
 
     // Update supervisor details, ensuring they belong to the correct school
     const supervisor = await Supervisor.findOneAndUpdate(
       { _id: supervisorId },
-      { supervisorName, address, phone, email },
+      { supervisorName, address, phone,deviceName, email,branchId },
       { new: true }
     );
 
