@@ -3,7 +3,7 @@ const router = express.Router();
 
 
 const { authenticateBranchGroupUser } = require('../middleware/authmiddleware');
-const { getChildByBranchGroup,registerParentByBranchgroup,approveParentByBranchgroup,presentchildrenByBranchgroup,updatechildByBranchgroup,deleteChildByBranchgroup, Pendingrequests, Approverequests, Deniedrequests,getDriverData, updateDriver, deletedriver, AddDevices, readSuperviserByBranchGroupUser, updateSupervisorByBranchGroupUser,deleteSupervisorByBranchGroupUser, getGeofence, deleteGeofence, getDevices, updateDevice, updateGeofence, ApproveSupervisor, ApproveDriver, getParentByBranchgroup, updateParentByBranchgroup, deleteParentByBranchgroup, absentchildrenByBranchgroup, deletedeviceByBranchgroup, pickupdropstatusByBranchgroup, getChildrenStatus } = require('../controllers/branchgroupuserController');
+const { getChildByBranchGroup,registerParentByBranchgroup,approveParentByBranchgroup,presentchildrenByBranchgroup,updatechildByBranchgroup,deleteChildByBranchgroup, Pendingrequests, Approverequests, Deniedrequests,getDriverData, updateDriver, deletedriver, AddDevices, readSuperviserByBranchGroupUser, updateSupervisorByBranchGroupUser,deleteSupervisorByBranchGroupUser, getGeofence, deleteGeofence, getDevices, updateDevice, updateGeofence, ApproveSupervisor, ApproveDriver, getParentByBranchgroup, updateParentByBranchgroup, deleteParentByBranchgroup, absentchildrenByBranchgroup, deletedeviceByBranchgroup, pickupdropstatusByBranchgroup, getChildrenStatus, ChangeStatusOfLeaveRequest } = require('../controllers/branchgroupuserController');
 
 
 
@@ -51,6 +51,7 @@ router.post("/approvesupervisor/:id",authenticateBranchGroupUser,ApproveSupervis
 router.get("/pendingrequests",authenticateBranchGroupUser,Pendingrequests);
 router.get("/approverequests",authenticateBranchGroupUser,Approverequests);
 router.get("/deniedrequests",authenticateBranchGroupUser,Deniedrequests);
+router.post("/changestatusofleaverequest/:id",authenticateBranchGroupUser,ChangeStatusOfLeaveRequest);
 
                     //  pickup- drop get Api  
 router.get("/pickupdropstatusbybranchgroupuser",authenticateBranchGroupUser,pickupdropstatusByBranchgroup);
