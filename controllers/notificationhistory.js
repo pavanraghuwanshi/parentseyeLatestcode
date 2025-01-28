@@ -299,6 +299,7 @@ exports.getNotification = async (req, res) => {
                     deviceId: 1, 
                     createdAt: 1, 
                     status: 1, 
+                    geofenceName: 1, 
                     deviceName: "$device.deviceName" 
                 }
             }
@@ -330,13 +331,15 @@ exports.getNotification = async (req, res) => {
         const deviceIdsArray = deviceIds.split(",");
 
         
-        const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
-
+        const twoHoursAgoUTC = new Date(Date.now() - 2 * 60 * 60 * 1000);
+        const twoHoursAgoIST = new Date(twoHoursAgoUTC.getTime() + 5.5 * 60 * 60 * 1000); 
+        
         const notifications = await Allalert.find({
             deviceId: { $in: deviceIdsArray },
-            createdAt: { $gte: twoHoursAgo },
-            status: "Exited"
+            createdAt: { $gte: twoHoursAgoIST },
+            status: { $in: ["Entered", "Exited"] }
         });
+        
 
         
         res.status(200).json({
