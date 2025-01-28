@@ -3,8 +3,9 @@ const mongoose = require('mongoose');
 const alertsSchema = new mongoose.Schema({
 
     deviceId: { type: String, },
-    geofenceAlert: { type: Boolean, },
-    name: { type: String, },
+    // geofenceAlert: { type: Boolean, },
+    geofenceName: { type: String, },
+    status: { type: String, },
 
     ignition:{ type: Boolean,},
 

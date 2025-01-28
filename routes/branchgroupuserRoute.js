@@ -3,7 +3,7 @@ const router = express.Router();
 
 
 const { authenticateBranchGroupUser } = require('../middleware/authmiddleware');
-const { getChildByBranchGroup,registerParentByBranchgroup,approveParentByBranchgroup,presentchildrenByBranchgroup,updatechildByBranchgroup,deleteChildByBranchgroup, Pendingrequests, Approverequests, Deniedrequests,getDriverData, updateDriver, deletedriver, AddDevices, readSuperviserByBranchGroupUser, updateSupervisorByBranchGroupUser,deleteSupervisorByBranchGroupUser, getGeofence, deleteGeofence, getDevices, updateDevice, updateGeofence, ApproveSupervisor, ApproveDriver, getParentByBranchgroup, updateParentByBranchgroup, deleteParentByBranchgroup, absentchildrenByBranchgroup, deletedeviceByBranchgroup, pickupdropstatusByBranchgroup, getChildrenStatus, ChangeStatusOfLeaveRequest } = require('../controllers/branchgroupuserController');
+const { getChildByBranchGroup,registerParentByBranchgroup,approveParentByBranchgroup,presentchildrenByBranchgroup,updatechildByBranchgroup,deleteChildByBranchgroup, Pendingrequests, Approverequests, Deniedrequests,getDriverData, updateDriver, deletedriver, AddDevices, readSuperviserByBranchGroupUser, updateSupervisorByBranchGroupUser,deleteSupervisorByBranchGroupUser, getGeofence, deleteGeofence, getDevices, updateDevice, updateGeofence, ApproveSupervisor, ApproveDriver, getParentByBranchgroup, updateParentByBranchgroup, deleteParentByBranchgroup, absentchildrenByBranchgroup, deletedeviceByBranchgroup, pickupdropstatusByBranchgroup, getChildrenStatus, ChangeStatusOfLeaveRequest, statusOfChildren, childStatus } = require('../controllers/branchgroupuserController');
 
 
 
@@ -76,6 +76,11 @@ router.put("/updategeofence/:id",authenticateBranchGroupUser,updateGeofence );
 router.delete("/deletegeofence/:id",authenticateBranchGroupUser,deleteGeofence);
    
 
+
+                    //  status Of Children get Api And also + button Api to check more data of student
+
+router.get("/statusofchildren",authenticateBranchGroupUser,statusOfChildren);
+router.get("/childstatusdetails/:childId",authenticateBranchGroupUser,childStatus);
 
 
 

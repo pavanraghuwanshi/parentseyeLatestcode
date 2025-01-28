@@ -1347,6 +1347,186 @@ router.get('/status-of-children', superadminMiddleware, async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+              // new code of status-of-children above controller
+
+
+router.get('/status-of-children', superadminMiddleware, async (req, res) => {
+  try {
+    // Aggregation pipeline to fetch children data with related documents
+    const childrenData = await Child.aggregate([
+      {
+        $lookup: {
+          from: 'parents',
+          localField: 'parentId',
+          foreignField: '_id',
+          as: 'parent',
+        },
+      },
+      { $unwind: { path: '$parent', preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: 'schools',
+          localField: 'schoolId',
+          foreignField: '_id',
+          as: 'school',
+        },
+      },
+      { $unwind: { path: '$school', preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: 'branches',
+          localField: 'branchId',
+          foreignField: '_id',
+          as: 'branch',
+        },
+      },
+      { $unwind: { path: '$branch', preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: 'attendances',
+          localField: '_id',
+          foreignField: 'childId',
+          as: 'attendance',
+        },
+      },
+      { $unwind: { path: '$attendance', preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: 'requests',
+          localField: '_id',
+          foreignField: 'childId',
+          as: 'request',
+        },
+      },
+      { $unwind: { path: '$request', preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: 'supervisors',
+          localField: 'deviceId',
+          foreignField: 'deviceId',
+          as: 'supervisor',
+        },
+      },
+      { $unwind: { path: '$supervisor', preserveNullAndEmptyArrays: true } },
+      {
+        $project: {
+          childId: '$_id',
+          childName: 1,
+          childClass: 1,
+          childAge: 1,
+          section: 1,
+          rollno: 1,
+          deviceId: 1,
+          deviceName: 1,
+          gender: 1,
+          pickupPoint: 1,
+          parentName: { $ifNull: ['$parent.parentName', 'Unknown Parent'] },
+          parentNumber: { $ifNull: ['$parent.phone', 'Unknown Phone'] },
+          email: { $ifNull: ['$parent.email', 'Unknown email'] },
+          password: { $ifNull: ['$parent.password', 'Unknown Password'] },
+          attendance: 1,
+          request: 1,
+          supervisor: { supervisorName: '$supervisor.supervisorName' },
+          school: 1,
+          branch: 1,
+        },
+      },
+    ]);
+
+    if (!childrenData || childrenData.length === 0) {
+      return res.status(404).json({ message: 'No children found in any school or branch' });
+    }
+
+    const schoolBranchData = {};
+
+    // Process the data for schoolBranchData format
+    childrenData.forEach(child => {
+      // Adding checks to ensure that parent, school, and branch exist
+      const school = child.school || {};
+      const branch = child.branch || {};
+      const parent = child.parent || {};
+      const password = decrypt(child.password);
+
+      const childData = {
+        childId: child.childId,
+        childName: child.childName,
+        childClass: child.childClass,
+        childAge: child.childAge,
+        section: child.section,
+        rollno: child.rollno,
+        deviceId: child.deviceId,
+        deviceName: child.deviceName,
+        gender: child.gender,
+        pickupPoint: child.pickupPoint,
+        parentName: parent ? parent.parentName : 'Unknown Parent',
+        parentNumber: parent ? parent.phone : 'Unknown Phone',
+        email: parent ? parent.email : 'Unknown email',
+        password: password,
+        ...(child.attendance && {
+          pickupStatus: child.attendance.pickup ? 'Present' : 'Absent',
+          dropStatus: child.attendance.drop ? 'Present' : 'Absent',
+          pickupTime: child.attendance.pickupTime,
+          dropTime: child.attendance.dropTime,
+          date: child.attendance.date,
+        }),
+        ...(child.request && {
+          requestType: child.request.requestType,
+          startDate: child.request.startDate ? formatDateToDDMMYYYY(child.request.startDate) : 'N/A',
+          endDate: child.request.endDate ? formatDateToDDMMYYYY(child.request.endDate) : 'N/A',
+          reason: child.request.reason,
+          newRoute: child.request.newRoute,
+          statusOfRequest: child.request.statusOfRequest,
+          requestDate: child.request.requestDate ? formatDateToDDMMYYYY(child.request.requestDate) : 'N/A',
+        }),
+        ...(child.supervisor && {
+          supervisorName: child.supervisor.supervisorName,
+        }),
+      };
+
+      if (school._id && branch._id) {
+        if (!schoolBranchData[school._id]) {
+          schoolBranchData[school._id] = {
+            schoolId: school._id.toString(),
+            schoolName: school.schoolName,
+            branches: {},
+          };
+        }
+
+        if (!schoolBranchData[school._id].branches[branch._id]) {
+          schoolBranchData[school._id].branches[branch._id] = {
+            branchId: branch._id.toString(),
+            branchName: branch.branchName,
+            children: [],
+          };
+        }
+
+        schoolBranchData[school._id].branches[branch._id].children.push(childData);
+      }
+    });
+
+    const responseData = Object.values(schoolBranchData).map(school => ({
+      schoolId: school.schoolId,
+      schoolName: school.schoolName,
+      branches: Object.values(school.branches).map(branch => ({
+        branchId: branch.branchId,
+        branchName: branch.branchName,
+        children: branch.children,
+      })),
+    }));
+
+    res.json({ data: responseData });
+  } catch (error) {
+    console.error('Error fetching children status:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+
+
+
+
+
 router.get('/status/:childId', superadminMiddleware, async (req, res) => {
   try {
     const { childId } = req.params;

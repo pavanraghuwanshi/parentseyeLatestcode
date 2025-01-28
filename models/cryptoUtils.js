@@ -13,14 +13,43 @@ function encrypt(text) {
   return iv.toString('hex') + ':' + encrypted;
 }
 
+// function decrypt(text) {
+//   const textParts = text.split(':');
+//   const iv = Buffer.from(textParts.shift(), 'hex');
+//   const encryptedText = Buffer.from(textParts.join(':'), 'hex');
+//   const decipher = crypto.createDecipheriv(algorithm, key, iv);
+//   let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
+//   decrypted += decipher.final('utf8');
+//   return decrypted;
+// }
+
+
 function decrypt(text) {
-  const textParts = text.split(':');
-  const iv = Buffer.from(textParts.shift(), 'hex');
-  const encryptedText = Buffer.from(textParts.join(':'), 'hex');
-  const decipher = crypto.createDecipheriv(algorithm, key, iv);
-  let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
-  decrypted += decipher.final('utf8');
-  return decrypted;
+  try {
+    const textParts = text.split(':');
+    if (textParts.length < 2) {
+      throw new Error("Invalid encrypted data format");
+    }
+
+    const iv = Buffer.from(textParts.shift(), 'hex');
+    const encryptedText = Buffer.from(textParts.join(':'), 'hex');
+
+    if (iv.length !== 16) {
+      throw new Error("Invalid IV length");
+    }
+
+    const decipher = crypto.createDecipheriv(algorithm, key, iv);
+    let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+    return decrypted;
+
+  } catch (error) {
+    console.error("Decryption error:", error.message);
+    throw error; 
+  }
 }
+
+
+
 
 module.exports = { encrypt, decrypt };

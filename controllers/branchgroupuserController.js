@@ -1568,3 +1568,200 @@ exports.deleteSupervisorByBranchGroupUser = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+
+                //  Student Status Api to check all data of student in one place 
+
+
+exports.statusOfChildren =  async (req, res) => {
+  try {
+    const branchesIds = req.user.branches          
+    const schoolName = req.user.school    
+    
+
+    const children = await Child.find({ branchId: { $in: branchesIds } })
+      .populate({
+        path: 'parentId',
+        select: 'parentName phone email password'
+      })
+      .populate({
+        path: 'branchId',
+        select: 'branchName'
+      })
+      .populate({
+        path: 'schoolId',
+        select: 'schoolName'
+      })
+      .lean();
+
+
+    if (children.length === 0) {
+      return res.status(404).json({ message: 'No children found for this school' });
+    }
+
+    const branchesMap = {};
+
+    for (const child of children) {
+      const parent = child.parentId;
+
+      const attendance = await Attendance.findOne({ childId: child._id })
+        .sort({ date: -1 })
+        .lean();
+
+      const request = await Request.findOne({ childId: child._id })
+        .sort({ requestDate: -1 })
+        .lean();
+
+      let supervisor = null;
+      if (child.deviceId) {
+        const deviceId = child.deviceId
+        supervisor = await Supervisor.findOne({deviceId,   branchId: { $in: branchesIds },}).lean();
+
+        console.log(supervisor)
+
+      }
+      const password = parent ? decrypt(parent.password) : 'Unknown Password';
+      if (attendance || request) {
+        const childData = {
+          childId: child._id,
+          childName: child.childName,
+          childClass: child.class,
+          childAge:child.childAge,
+          section:child.section,
+          childAge: child.childAge,
+          rollno: child.rollno,
+          deviceId: child.deviceId,
+          deviceName:child.deviceName,
+          gender: child.gender,
+          pickupPoint: child.pickupPoint,
+            parentName: parent ? parent.parentName : 'Parent not found',
+            parentNumber: parent ? parent.phone : 'Parent not found',
+            email:parent ? parent.email :"unknown email",
+            password: password,
+          ...(attendance && {
+            pickupStatus: attendance.pickup ? 'Present' : 'Absent',
+            dropStatus: attendance.drop ? 'Present' : 'Absent',
+            pickupTime: attendance.pickupTime,
+            dropTime: attendance.dropTime,
+            date: attendance.date
+          }),
+          ...(request && {
+              requestType: request.requestType,
+              startDate: formatDateToDDMMYYYY(request.startDate)|| 'N/A',
+              endDate: formatDateToDDMMYYYY(request.endDate) || 'N/A',
+              reason: request.reason || 'N/A',
+              newRoute: request.newRoute || 'N/A',
+              statusOfRequest: request.statusOfRequest || 'N/A',
+              requestDate: formatDateToDDMMYYYY(request.requestDate) || 'N/A'            
+          }),
+          ...(supervisor && {
+            supervisorName: supervisor.supervisorName
+          })
+        };
+
+        if (!branchesMap[child.branchId._id]) {
+          branchesMap[child.branchId._id] = {
+            branchId: child.branchId._id,
+            branchName: child.branchId.branchName,
+            children: []
+          };
+        }
+
+        branchesMap[child.branchId._id].children.push(childData);
+      }
+    }
+
+    const branches = Object.values(branchesMap);
+
+    const response = {
+
+      schoolName ,
+      branches
+    };
+
+
+    res.json(response);
+  } catch (error) {
+    console.error('Error fetching all children status:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+}
+
+
+exports.childStatus = async (req, res) => {
+  try {
+    const { childId } = req.params;
+    const branchesIds = req.user.branches          
+
+    const child = await Child.findById( childId )
+      .populate({
+        path: 'parentId',
+        select: 'parentName phone password email'
+      })
+      .populate({
+        path: 'branchId', 
+        select: 'branchName'
+      })
+      .populate({
+        path: 'schoolId', 
+        select: 'schoolName'
+      })
+      .lean(); 
+
+    if (!child) {
+      return res.status(404).json({ message: 'Child not found' });
+    }
+
+    const parent = child.parentId;
+    const password = parent ? decrypt(parent.password) : 'Unknown Password';
+
+    const attendance = await Attendance.findOne({ childId })
+      .sort({ date: -1 })
+      .limit(1);
+
+    const request = await Request.findOne({ childId })
+      .sort({ requestDate: -1 })
+      .limit(1);
+
+    let supervisor = null;
+    if (child.deviceId) {
+      supervisor = await Supervisor.findOne({ deviceId: child.deviceId });
+    }
+
+    const response = {};
+
+    if (child.childName) response.childName = child.childName;
+    if (child.class) response.childClass = child.class;
+    if (child.rollno) response.rollno = child.rollno;
+    if (child.deviceId) response.deviceId = child.deviceId;
+    if (child.deviceName) response.deviceName = child.deviceName;
+    if (child.gender) response.gender = child.gender;
+    if (child.pickupPoint) response.pickupPoint = child.pickupPoint;
+    if (password) response.password = password; 
+    if (parent && parent.parentName) response.parentName = parent.parentName;
+    if (parent && parent.phone) response.parentNumber = parent.phone;
+    if (child.branchId && child.branchId.branchName) response.branchName = child.branchId.branchName;
+    if (child.schoolId && child.schoolId.schoolName) response.schoolName = child.schoolId.schoolName;
+    if (attendance && attendance.pickup !== undefined) response.pickupStatus = attendance.pickup ? 'Present' : 'Absent';
+    if (attendance && attendance.drop !== undefined) response.dropStatus = attendance.drop ? 'Present' : 'Absent';
+    if (attendance && attendance.pickupTime) response.pickupTime = attendance.pickupTime;
+    if (attendance && attendance.dropTime) response.dropTime = attendance.dropTime;
+    if (attendance && attendance.date) response.date = attendance.date;
+    if (request && request.requestType) response.requestType = request.requestType;
+
+    if (request && request.startDate) response.startDate = formatDateToDDMMYYYY(request.startDate);
+    if (request && request.endDate) response.endDate = formatDateToDDMMYYYY(request.endDate);
+    if (request && request.requestDate) response.requestDate = formatDateToDDMMYYYY(request.requestDate);
+
+    if (request && request.reason) response.reason = request.reason;
+    if (request && request.newRoute) response.newRoute = request.newRoute;
+    if (request && request.statusOfRequest) response.statusOfRequest = request.statusOfRequest;
+    if (supervisor && supervisor.supervisorName) response.supervisorName = supervisor.supervisorName;
+
+    res.json({child:response});
+  } catch (error) {
+    console.error('Error fetching child status:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+

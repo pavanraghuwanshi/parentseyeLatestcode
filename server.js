@@ -90,6 +90,7 @@ const socketIo = require('socket.io');
 const { onUserConnect, onUserDisconnect } = require("./utils/notificationWebSocket");
 const axios = require('axios');
 const { ab } = require("./utils/alertsforwebapp");
+const { etaCalculationSocket } = require("./utils/etacalculation");
 // Initialize the database connection
 require("./db/db");
 
@@ -110,6 +111,7 @@ io.on('connection', (socket) => {
   let singleDeviceInterval;
   console.log('A user connected:', socket.id);
   ab(io,socket)
+  etaCalculationSocket(io,socket)
 
   // Live Tracking Data
   socket.on('deviceId', (deviceId) => {
@@ -354,3 +356,6 @@ app.get('/', (req, res) => {
     environment: process.env.NODE_ENV || 'development'
   });
 });
+
+
+// server check 

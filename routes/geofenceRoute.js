@@ -110,6 +110,13 @@ router.post("/", jwtAuthMiddleware, async (req, res) => {
     if (!name || !area || !deviceId) {
       return res.status(400).json({ error: "Name, area, and device ID are required" });
     }
+
+    const findForUnique = await Geofencing.findOne({ name, deviceId });
+    console.log(findForUnique,"findForUnique")
+    if (findForUnique) {
+
+      return res.status(400).json({ error: 'Same name already exists for this deviceId choose another name' });
+      }
     const newGeofencing = new Geofencing({
       name,
       area,

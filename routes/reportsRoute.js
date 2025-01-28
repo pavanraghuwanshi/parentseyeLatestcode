@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-const { getNotification, createNotificationtypes, getNotificationTypes, updateNotificationTypes, deleteNotificationTypes } = require('../controllers/notificationhistory');
+const { getNotification, createNotificationtypes, getNotificationTypes, updateNotificationTypes, deleteNotificationTypes, getRecentExitedAlerts } = require('../controllers/notificationhistory');
 
 
                     // Notification Types Crud 
@@ -14,6 +14,12 @@ router.delete("/deletenotification",deleteNotificationTypes)
                     // Notification History
 
 router.get("/notificationalerthistory",getNotification)
+
+                    //  Get IsCrossed History
+                    
+router.get("/iscrossedhistory",getRecentExitedAlerts)
+
+
 
 
 module.exports = router;

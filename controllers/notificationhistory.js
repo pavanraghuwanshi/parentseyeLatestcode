@@ -274,10 +274,36 @@ exports.getNotification = async (req, res) => {
              return res.status(400).json({ message: "Either duration or startDate and endDate must be provided" });
          }
  
-         const notifications = await Allalert.find({
-             deviceId: { $in: deviceIdsArray },
-             createdAt: { $gte: queryStartDate, $lte: queryEndDate }
-         });
+         const notifications = await Allalert.aggregate([
+            {
+                $lookup: {
+                    from: "devices",
+                    localField: "deviceId", 
+                    foreignField: "deviceId", 
+                    as: "device"
+                }
+            },
+            {
+                $unwind: "$device"
+            },
+            {
+                $match: {
+                    deviceId: { $in: deviceIdsArray },
+                    createdAt: { $gte: queryStartDate, $lte: queryEndDate },
+                    status: { $in: ["Entered", "Exited"] } 
+                }
+            },
+            {
+                $project: {
+                    _id: 1, 
+                    deviceId: 1, 
+                    createdAt: 1, 
+                    status: 1, 
+                    deviceName: "$device.deviceName" 
+                }
+            }
+        ]);
+        
  
          res.status(200).json({ success: true, data: notifications });
      } catch (error) {
@@ -285,3 +311,48 @@ exports.getNotification = async (req, res) => {
      }
  };
  
+
+
+ exports.getRecentExitedAlerts = async (req, res) => {
+    try {
+        
+        const deviceIds = req.query.deviceIds;
+
+        
+        if (!deviceIds) {
+            return res.status(400).json({
+                success: false,
+                message: "Missing 'deviceIds' query parameter"
+            });
+        }
+
+       
+        const deviceIdsArray = deviceIds.split(",");
+
+        
+        const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+
+        const notifications = await Allalert.find({
+            deviceId: { $in: deviceIdsArray },
+            createdAt: { $gte: twoHoursAgo },
+            status: "Exited"
+        });
+
+        
+        res.status(200).json({
+            success: true,
+            message: "Recent 'Exited' alerts fetched successfully",
+            data: notifications
+        });
+    } catch (error) {
+        console.error("Error fetching alerts:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch alerts",
+            error: error.message
+        });
+    }
+};
+
+    
+    

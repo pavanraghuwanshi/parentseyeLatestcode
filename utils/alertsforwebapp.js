@@ -16,11 +16,12 @@ const formattedDate = `${date.getDate().toString().padStart(2, '0')}-${(date.get
 
 
 
-let positionDataArray;
+let positionDataArray=[];
 const fetchDataPosition = async () => {
      try {
           const alertData = await axios("https://rocketsalestracker.com/api/positions", { auth: { username: "schoolmaster", password: "123456" } })
           positionDataArray = alertData.data;
+          return alertData.data;
 
      } catch (error) {
           console.log(error)
@@ -29,17 +30,16 @@ const fetchDataPosition = async () => {
 
 setInterval(() => {
      fetchDataPosition();
-}, 3000);
+}, 10000);
 
 
-
-let isCrossedstatestore = []
 let prevIgnitionstate = []
 let prevrequeststate = []
 let prevStudAttendence = []
 let globleAllAlert
 
 
+const deviceGeofenceState = new Map();
 
 
 
@@ -73,44 +73,89 @@ const alertgeter = async () => {
 
           prevIgnitionstate = [...filterAtribute?? []]
 
+     //-----------------------------------------------------new coding stared from here------------------------------
 
+           
+          const getGeofences = await Geofencing.find();
+          const geofenceAlertArr = [];
+          
+          for (const device of positionDataArray) {
+              const { deviceId, latitude: currLat, longitude: currLng } = device;
+          
+              for (const geofence of getGeofences) {
+                  if (geofence.deviceId && String(geofence.deviceId) !== String(deviceId)) {
+                      continue;
+                  }
+          
+                  const { name } = geofence;
+                  
+                  const latLong = [currLat, currLng];
+                  const isInside = isPointInHaversine(geofence.area, latLong);                  
+                  
+                  
+                  const previousState = deviceGeofenceState.get(deviceId)?.[name];
+          
+                  if (previousState !== undefined && previousState !== isInside) {      
 
-          const getgeofence = await Geofencing.find();
-          const isCrosseddata = getgeofence.map(geofence => {
-               const geofenceAlert = geofence.isCrossed
-               const deviceId = geofence.deviceId
-               const name = geofence.name
-               const arrivalTime = geofence.arrivalTime
-               const departureTime = geofence.departureTime
-               return { geofenceAlert, deviceId, name,arrivalTime,departureTime }
-          })
-
-          let i = 0
-          const geofenceAlertArr = []
-          for (const obj of isCrosseddata) {
-
-               if (isCrossedstatestore.length > 0 && isCrossedstatestore?.length == isCrosseddata.length && obj.geofenceAlert !== isCrossedstatestore[i].geofenceAlert) {
-                    const geofenceAlert = obj.geofenceAlert
-                    const deviceId = obj.deviceId
-                    const name = obj.name
-                    const arrivalTime = obj.arrivalTime
-                    const departureTime = obj.departureTime
-                    geofenceAlertArr.push({ geofenceAlert, deviceId, name,arrivalTime,departureTime });
-               }
-               i++;
+                      geofenceAlertArr.push({
+                          status: isInside ? "Entered" : "Exited",
+                          deviceId,
+                          geofenceName: name,
+                          timestamp: new Date(),
+                      });
+          
+                    }
+                    if (!deviceGeofenceState.has(deviceId)) {
+                        deviceGeofenceState.set(deviceId, {});
+                    }
+                    deviceGeofenceState.get(deviceId)[name] = isInside;
+              }
           }
+          // console.log(geofenceAlertArr,"geofenceAlertArraaaaaaaa")
+          
+          await Promise.all(getGeofences.map((geofence) => geofence.save()));
+          
+          function parseCircle(area) {
+              area = area.replace(/\s+/g, ' ').trim();
+              const regex = /Circle\(\s*([-.\d]+)\s+([-.\d]+),\s*([.\d]+)\s*\)/;
+              const match = area.match(regex);
+              if (!match) {
+                  throw new Error("Invalid area format");
+              }
+              const centerLat = parseFloat(match[1]);
+              const centerLon = parseFloat(match[2]);
+              const radius = parseFloat(match[3]);
+              return {
+                  center: { lat: centerLat, lon: centerLon },
+                  radius: radius,
+              };
+          }
+          
+          function isPointInHaversine(area, point) {
+              const parsedCircle = parseCircle(area);
+              const { center, radius } = parsedCircle;
+              const { lat: centerLat, lon: centerLon } = center;
+              const [pointLat, pointLon] = point;
+              const earthRadius = 6371 * 1000;
+              const toRadians = (degrees) => (degrees * Math.PI) / 180;
+              const dLat = toRadians(pointLat - centerLat);
+              const dLon = toRadians(pointLon - centerLon);
+              const a =
+                  Math.sin(dLat / 2) ** 2 +
+                  Math.cos(toRadians(centerLat)) *
+                  Math.cos(toRadians(pointLat)) *
+                  Math.sin(dLon / 2) ** 2;
+              const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+              const distance = earthRadius * c;
+              return distance <= radius;
+          }
+          
+           
 
-          if (isCrossedstatestore.length >0 && isCrosseddata.length > isCrossedstatestore.length) {
-               const count = isCrossedstatestore.length;
-               const modifiedGeofenceAlert = isCrosseddata.slice(count);  
+     //----------------------------------------------------new coding end from here---------------------------------
+          
+          
 
-               geofenceAlertArr.push(...modifiedGeofenceAlert)
-
-           }
-
-
-
-          isCrossedstatestore = [...isCrosseddata]
 
 
           const getrequestnotifications = await Request.find();
@@ -216,7 +261,7 @@ const alertgeter = async () => {
                
                const getnotificationtypes = await notificationTypes.find();
 
-               let matchedDeviceAlerts = [...requestAlertArr, ...StudAttendenceAlert]
+               let matchedDeviceAlerts = [...requestAlertArr, ...StudAttendenceAlert, ...geofenceAlertArr,...ignitionAlertArr]
                getnotificationtypes?.forEach(item1 => {
                     const match = allAlerts.find(item => item.deviceId === item1.deviceId);
                   
@@ -360,6 +405,8 @@ const SchoolLoginRoleWiseFilter = (globleDevices,socket)=>{
 
                          if(globleMatchedDevices?.length>0){
                               socket.emit("allAlerts", globleMatchedDevices)
+
+                              console.log("alert check pavan ", globleMatchedDevices)
                               
                          }
           
@@ -399,7 +446,7 @@ const BranchGroupUserLoginRoleWiseFilter = (globleDevices,socket)=>{
 
 
 
-exports.ab = (io, socket) => {
+const ab = (io, socket) => {
 
 
      let alertInterval
@@ -469,3 +516,5 @@ exports.ab = (io, socket) => {
      
      // io.to(socket.id).emit("msg","i am msg")
 }
+
+module.exports = {ab,fetchDataPosition};

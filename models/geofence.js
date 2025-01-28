@@ -24,6 +24,9 @@ const geofencingSchema = new mongoose.Schema({
   arrivalTime:{
     type: String
   },
+  updateHours:{
+    type: String
+  },
   departureTime:{
     type: String
   },
