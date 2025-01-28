@@ -108,196 +108,198 @@ const io = socketIo(server, { cors: { origin: '*' } });
 setIO(io);
 
 io.on('connection', (socket) => {
-  let singleDeviceInterval;
+  // let singleDeviceInterval;
   console.log('A user connected:', socket.id);
   ab(io,socket)
   etaCalculationSocket(io,socket)
 
   // Live Tracking Data
-  socket.on('deviceId', (deviceId) => {
-    // const getLiveData = (deviceId, singleDeviceInterval) => {
+  // socket.on('deviceId', (deviceId) => {
+  //   // const getLiveData = (deviceId, singleDeviceInterval) => {
 
-    const userr = "schoolmaster";
-    const pass = "123456";
+  //   const userr = "schoolmaster";
+  //   const pass = "123456";
 
-    targetDeviceId = Number(deviceId);
-    console.log("data type", typeof deviceId, deviceId);
+  //   targetDeviceId = Number(deviceId);
+  //   console.log("data type", typeof deviceId, deviceId);
 
-    // fetch single device data instant for first time
-    if (targetDeviceId != null) {
-      let devicelist = null;
-      let devicelistFromAPI = {
-        category: "",
-        status: "",
-        lastUpdate: "",
-        name: "",
-      };
-      (async function () {
-        // const url = "http://104.251.212.84/api/devices";
-        const url = "https://rocketsalestracker.com/api/devices";
-        const username = userr;
-        const password = pass;
+  //   // fetch single device data instant for first time
+  //   if (targetDeviceId != null) {
+  //     let devicelist = null;
+  //     let devicelistFromAPI = {
+  //       category: "",
+  //       status: "",
+  //       lastUpdate: "",
+  //       name: "",
+  //     };
+  //     (async function () {
+  //       // const url = "http://104.251.212.84/api/devices";
+  //       const url = "https://rocketsalestracker.com/api/devices";
+  //       const username = userr;
+  //       const password = pass;
 
-        try {
-          const response = await axios.get(url, {
-            auth: { username: username, password: password },
-          });
-          devicelist = response.data;
-          devicelistFromAPI = devicelist.find(
-            (device) => device.id === targetDeviceId
-          );
-          // console.log(devicelistFromAPI);
+  //       try {
+  //         const response = await axios.get(url, {
+  //           auth: { username: username, password: password },
+  //         });
+  //         devicelist = response.data;
+  //         devicelistFromAPI = devicelist.find(
+  //           (device) => device.id === targetDeviceId
+  //         );
+  //         // console.log(devicelistFromAPI);
 
-          // console.log('API response data:', devicelist);
-        } catch (error) {
-          console.error("Error fetching data from API:", error);
-        }
-      })();
-      // console.log("deviceId", typeof targetDeviceId, targetDeviceId)
+  //         // console.log('API response data:', devicelist);
+  //       } catch (error) {
+  //         console.error("Error fetching data from API:", error);
+  //       }
+  //     })();
+  //     // console.log("deviceId", typeof targetDeviceId, targetDeviceId)
 
-      // in this setinterval i am emiting event
-      (async function () {
-        // const url = "http://104.251.212.84/api/positions";
-        const url = "https://rocketsalestracker.com/api/positions";
-        const username = userr;
-        const password = pass;
+  //     // in this setinterval i am emiting event
+  //     (async function () {
+  //       // const url = "http://104.251.212.84/api/positions";
+  //       const url = "https://rocketsalestracker.com/api/positions";
+  //       const username = userr;
+  //       const password = pass;
 
-        try {
-          const response = await axios.get(url, {
-            auth: { username: username, password: password },
-          });
-          const data = response.data;
-          // console.log("data from GPS device ", data)
-          // console.log("BBBBBBBBBBB")
+  //       try {
+  //         const response = await axios.get(url, {
+  //           auth: { username: username, password: password },
+  //         });
+  //         const data = response.data;
+  //         // console.log("data from GPS device ", data)
+  //         // console.log("BBBBBBBBBBB")
 
-          const device = data.find(
-            (device) => device.deviceId === targetDeviceId
-          );
-          console.log("device", device)
-          if (device) {
-            const dataForSocket = {
-              speed: device.speed,
-              longitude: device.longitude,
-              latitude: device.latitude,
-              course: device.course,
-              deviceId: device.deviceId,
-              deviceTime: device.deviceTime,
-              // ignition: device.attributes.ignition,
-              // distance: device.attributes.distance,
-              // totalDistance: device.attributes.totalDistance,
-              // event: device.attributes.event,
-              attributes: device.attributes,
-              category: devicelistFromAPI.category,
-              status: devicelistFromAPI.status,
-              lastUpdate: devicelistFromAPI.lastUpdate,
-              name: devicelistFromAPI.name,
-              uniqueId: devicelistFromAPI.uniqueId,
-            };
-            socket.emit("single device data", dataForSocket);
-            console.log("single device data");
-            
-          }
-        } catch (error) {
-          console.error(
-            "There was a problem with the fetch operation:",
-            error.message
-          );
-        }
-      })();
-    }
+  //         const device = data.find(
+  //           (device) => device.deviceId === targetDeviceId
+  //         );
+  //         console.log("device", device)
+  //         if (device) {
+  //           const dataForSocket = {
+  //             speed: device.speed,
+  //             longitude: device.longitude,
+  //             latitude: device.latitude,
+  //             course: device.course,
+  //             deviceId: device.deviceId,
+  //             deviceTime: device.deviceTime,
+  //             // ignition: device.attributes.ignition,
+  //             // distance: device.attributes.distance,
+  //             // totalDistance: device.attributes.totalDistance,
+  //             // event: device.attributes.event,
+  //             attributes: device.attributes,
+  //             category: devicelistFromAPI.category,
+  //             status: devicelistFromAPI.status,
+  //             lastUpdate: devicelistFromAPI.lastUpdate,
+  //             name: devicelistFromAPI.name,
+  //             uniqueId: devicelistFromAPI.uniqueId,
+  //           };
+  //           socket.emit("single device data", dataForSocket);
+  //           console.log("single device data");
+  //           // console.log(
+  //           //   "SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS"
+  //           // );
+  //         }
+  //       } catch (error) {
+  //         console.error(
+  //           "There was a problem with the fetch operation:",
+  //           error.message
+  //         );
+  //       }
+  //     })();
+  //   }
 
-    singleDeviceInterval = setInterval(() => {
-      if (targetDeviceId != null) {
-        // this is for devices start
-        let devicelist = null;
-        let devicelistFromAPI = {
-          category: "",
-          status: "",
-          lastUpdate: "",
-          name: "",
-        };
-        // setInterval(() => {
-        (async function () {
-          // const url = "http://104.251.212.84/api/devices";
-          const url = "https://rocketsalestracker.com/api/devices";
-          const username = userr;
-          const password = pass;
+  //   singleDeviceInterval = setInterval(() => {
+  //     if (targetDeviceId != null) {
+  //       // this is for devices start
+  //       let devicelist = null;
+  //       let devicelistFromAPI = {
+  //         category: "",
+  //         status: "",
+  //         lastUpdate: "",
+  //         name: "",
+  //       };
+  //       // setInterval(() => {
+  //       (async function () {
+  //         // const url = "http://104.251.212.84/api/devices";
+  //         const url = "https://rocketsalestracker.com/api/devices";
+  //         const username = userr;
+  //         const password = pass;
 
-          try {
-            const response = await axios.get(url, {
-              auth: { username: username, password: password },
-            });
-            devicelist = response.data;
-            devicelistFromAPI = devicelist.find(
-              (device) => device.id === targetDeviceId
-            );
+  //         try {
+  //           const response = await axios.get(url, {
+  //             auth: { username: username, password: password },
+  //           });
+  //           devicelist = response.data;
+  //           devicelistFromAPI = devicelist.find(
+  //             (device) => device.id === targetDeviceId
+  //           );
 
-            // console.log('API response data:', devicelist);
-          } catch (error) {
-            console.error("Error fetching data from API:", error);
-          }
-        })();
-        // console.log("deviceId", typeof targetDeviceId, targetDeviceId)
-        // }, 10000);
-        // this is for devices end
+  //           // console.log('API response data:', devicelist);
+  //         } catch (error) {
+  //           console.error("Error fetching data from API:", error);
+  //         }
+  //       })();
+  //       // console.log("deviceId", typeof targetDeviceId, targetDeviceId)
+  //       // }, 10000);
+  //       // this is for devices end
 
-        // in this setinterval i am emiting event
-        // setInterval(() => {
-        (async function () {
-          // const url = "http://104.251.212.84/api/positions";
-          const url = "https://rocketsalestracker.com/api/positions";
-          const username = userr;
-          const password = pass;
+  //       // in this setinterval i am emiting event
+  //       // setInterval(() => {
+  //       (async function () {
+  //         // const url = "http://104.251.212.84/api/positions";
+  //         const url = "https://rocketsalestracker.com/api/positions";
+  //         const username = userr;
+  //         const password = pass;
 
-          try {
-            const response = await axios.get(url, {
-              auth: { username: username, password: password },
-            });
-            const data = response.data;
-            // console.log("data from GPS device ",data)
-            // console.log("BBBBBBBBBBB")
+  //         try {
+  //           const response = await axios.get(url, {
+  //             auth: { username: username, password: password },
+  //           });
+  //           const data = response.data;
+  //           // console.log("data from GPS device ",data)
+  //           // console.log("BBBBBBBBBBB")
 
-            const device = data.find(
-              (device) => device.deviceId === targetDeviceId
-            );
-            // console.log("device",device)
-            if (device) {
-              const dataForSocket = {
-                speed: device.speed,
-                longitude: device.longitude,
-                latitude: device.latitude,
-                course: device.course,
-                deviceId: device.deviceId,
-                deviceTime: device.deviceTime,
-                attributes: device.attributes,
-                category: devicelistFromAPI.category,
-                status: devicelistFromAPI.status,
-                lastUpdate: devicelistFromAPI.lastUpdate,
-                name: devicelistFromAPI.name,
-                uniqueId: devicelistFromAPI.uniqueId,
-                // ignition: device.attributes.ignition,
-                // distance: device.attributes.distance,
-                // totalDistance: device.attributes.totalDistance,
-                // event: device.attributes.event,
-              };
-              console.log("single device data");
-              socket.emit("single device data", dataForSocket);
-              // console.log(
-              //   "SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS"
-              // );
-            }
-          } catch (error) {
-            console.error(
-              "There was a problem with the fetch operation:",
-              error.message
-            );
-          }
-        })();
-        // }, 10000);
-      }
-    }, 10000);
-    // }
-  });
+  //           const device = data.find(
+  //             (device) => device.deviceId === targetDeviceId
+  //           );
+  //           // console.log("device",device)
+  //           if (device) {
+  //             const dataForSocket = {
+  //               speed: device.speed,
+  //               longitude: device.longitude,
+  //               latitude: device.latitude,
+  //               course: device.course,
+  //               deviceId: device.deviceId,
+  //               deviceTime: device.deviceTime,
+  //               attributes: device.attributes,
+  //               category: devicelistFromAPI.category,
+  //               status: devicelistFromAPI.status,
+  //               lastUpdate: devicelistFromAPI.lastUpdate,
+  //               name: devicelistFromAPI.name,
+  //               uniqueId: devicelistFromAPI.uniqueId,
+  //               // ignition: device.attributes.ignition,
+  //               // distance: device.attributes.distance,
+  //               // totalDistance: device.attributes.totalDistance,
+  //               // event: device.attributes.event,
+  //             };
+  //             console.log("single device data");
+  //             socket.emit("single device data", dataForSocket);
+  //             // console.log(
+  //             //   "SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS"
+  //             // );
+  //           }
+  //         } catch (error) {
+  //           console.error(
+  //             "There was a problem with the fetch operation:",
+  //             error.message
+  //           );
+  //         }
+  //       })();
+  //       // }, 10000);
+  //     }
+  //   }, 10000);
+  //   // }
+  // });
 
   socket.on('registerBranch', (branchId) => {
     console.log(`School ${branchId} subscribed to notifications`);
@@ -308,7 +310,7 @@ io.on('connection', (socket) => {
 socket.on('disconnect', () => {
     console.log('A user disconnected:', socket.id);
     onUserDisconnect(socket);
-    clearInterval(singleDeviceInterval);
+    // clearInterval(singleDeviceInterval);
   });
 });
 
