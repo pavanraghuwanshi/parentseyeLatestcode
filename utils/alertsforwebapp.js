@@ -278,8 +278,10 @@ const alertgeter = async () => {
                if(allAlerts.length>0){
 
                     // console.log("allAlerts inner", allAlerts);
+                    const filteredAlerts = allAlerts.filter(alert => !ignitionAlertArr.includes(alert));
+                         // console.log("AAAAAAAAAAA",filteredAlerts)
                try {
-               await Allalert.insertMany(allAlerts);
+               await Allalert.insertMany(filteredAlerts);
                // console.log('Alerts saved successfully!');
                } catch (error) {
                console.error('Error saving alerts:', error);
