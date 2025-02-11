@@ -989,14 +989,14 @@ exports.getDriverData = async (req, res) => {
 
 exports.updateDriver = async (req, res) => {
   try {
-    const { driverName, address, driverMobile, email, deviceName, branchId } = req.body;
+    const { driverName, address, driverMobile, email, deviceName, branchId,deviceId } = req.body;
    
     const id = req.params
     
 
     const driver = await DriverCollection.findOneAndUpdate(
       { _id: new mongoose.Types.ObjectId(id) },
-      { driverName, address, driverMobile, email, deviceName, branchId },
+      { driverName, address, driverMobile, email, deviceName, branchId,deviceId },
       { new: true }
     );
 
@@ -1534,13 +1534,13 @@ exports.ApproveSupervisor =  async (req, res) => {
 
 exports.updateSupervisorByBranchGroupUser = async (req, res) => {
   try {
-    const { supervisorName, address, phone_no, email,deviceName, branchId } = req.body;
+    const { supervisorName, address, phone_no, email,deviceName, branchId,deviceId } = req.body;
     const supervisorId = req.params.id;
 
     // Update supervisor details, ensuring they belong to the correct school
     const supervisor = await Supervisor.findOneAndUpdate(
       { _id: supervisorId },
-      { supervisorName, address, phone_no,deviceName, email,branchId },
+      { supervisorName, address, phone_no,deviceName, email,branchId,deviceId },
       { new: true }
     );
 
